@@ -1,8 +1,8 @@
 from fastapi import FastAPI
+from domain.user import user_router
+from domain.board import board_router
 
 app = FastAPI()
 
-
-@app.get("/hello")
-def hello():
-    return {"message": "안녕하세요 파이보"}
+app.include_router(user_router.router)
+app.include_router(board_router.router)

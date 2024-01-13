@@ -1,10 +1,14 @@
 from pydantic import BaseModel, validator
-from fastapi import HTTPException
+from domain.user.user_schema import User
 
+class Board(BaseModel):
+    id: int
+    name : str
+    num_post : int = 0
 
 class BoardCreate(BaseModel):
     name : str
-    public : bool
+    public : bool = False
 
     @validator('name')
     def not_empty(cls, v):
@@ -20,3 +24,9 @@ class BoardUpdate(BoardCreate):
 
 class BoardDelete(BaseModel):
     board_id : int
+
+
+class BoardList(BaseModel):
+    total : int = 0
+    board_list : list[Board] = []
+  

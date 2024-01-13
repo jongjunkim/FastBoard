@@ -8,12 +8,14 @@ from sqlalchemy.orm import Session
 from starlette import status
 from domain.user.user_crud import pwd_context
 
-from database import get_db
+from database import get_db, get_redis_connection
 from domain.user import user_crud, user_schema
+import redis
+import uuid
 
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 SECRET_KEY = "12063be504231ea7b8538a49adc46582ac8c99e40becf99f968647de4943ae35"
 ALGORITHM = "HS256"
 
@@ -53,11 +55,13 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
             detail="비밀번호가 맞지 않습니다.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
+    jti = str(uuid.uuid4())
+    
     # make access token
     data = {
         "sub": user.email,
-        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        "jti": jti
     }
     access_token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -70,14 +74,17 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
     }
 
 @router.get("/logout", status_code=status.HTTP_200_OK)
-def logout(response: Response, request: Request):
-
+def logout(response: Response, request: Request, redis_conn: redis.StrictRedis = Depends(get_redis_connection)):
     access_token = request.cookies.get("access_token")
+    
+    payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+    token_id = payload.get("jti")
+
+    # Blacklist the token by storing it in Redis
+    redis_conn.setex(token_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), 'blacklisted')
 
     response.delete_cookie(key="access_token")
-    
     return {"message": "Logout successful"}
-
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):

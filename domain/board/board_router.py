@@ -7,8 +7,11 @@ from starlette import status
 from domain.user.user_router import get_current_user
 from models import User
 
-from database import get_db
+from database import get_db, get_redis_connection
 from domain.board import board_crud, board_schema
+
+import redis
+import json
 
 router = APIRouter(
     prefix="/api/board",
@@ -59,29 +62,52 @@ def board_delete(_board_delete: board_schema.BoardDelete, db: Session = Depends(
 
 
 @router.get("/get/{board_id}", status_code=status.HTTP_200_OK)
-def board_get(board_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # 해당 게시판 ID에 대한 게시판을 조회
-    db_board = board_crud.get_board_id(db, board_id = board_id)
-    
+def board_get(board_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user), 
+            redis_conn: redis.StrictRedis = Depends(get_redis_connection)):
+   
+    cache_board_key = f"board_user_{current_user.id}_{board_id}"
+
+    cached_board = redis_conn.get(cache_board_key)
+
+    if cached_board:
+        print("cache hit")
+        return json.loads(cached_board.decode('utf-8'))
+
+    # If not found in Redis, fetch from the database
+    db_board = board_crud.get_board_id(db, board_id=board_id)
     if not db_board:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을 수 없습니다.")
 
-    # 본인이 생성한 게시판이거나 전체 공개된 게시판인 경우 조회 가능
+    # Check permissions
     if not db_board.public and db_board.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
 
-    return {"board_id": db_board.id,
-            "board_name": db_board.name}
+    # Store board information in Redis for future use with expiration
+    redis_conn.setex(cache_board_key, timedelta(hours=2), json.dumps({'board_id': db_board.id,'board_name': db_board.name}))
+
+    return {'board_id': db_board.id,'board_name': db_board.name}
 
 
+@router.get("/list", response_model=board_schema.BoardList)
+def board_get_list(db: Session = Depends(get_db),current_user: User = Depends(get_current_user),page: int = 0,size: int = 10,
+                    redis_conn: redis.StrictRedis = Depends(get_redis_connection)):
+    
+    cache_board_list_key = f"board_list_user_{current_user.id}_{page}_{size}"
 
-# #해당 게시판에 작성된 게시글의 개수로 정렬
-@router.get("/list", response_model = board_schema.BoardList)
-def board_get_list(db:Session = Depends(get_db), current_user: User = Depends(get_current_user),  page:int = 0, size:int = 10):
+    cached_board_list = redis_conn.get(cache_board_list_key)
+    if cached_board_list:
+        print("cache_hit")
+        return json.loads(cached_board_list.decode('utf-8'))
 
-    total, _board_list = board_crud.get_board_list(db, current_user, skip = page * size, limit = size)
+    total, _board_list = board_crud.get_board_list(db, current_user, skip=page * size, limit=size)
 
-    return {
-        'total': total,
-        'board_list': _board_list
-    }
+    # Convert the _board_list to a format that is JSON serializable
+    board_list_serializable = [{'id': board.id,'name': board.name, 'num_post': board.num_post} for board in _board_list]
+    cache_data = json.dumps({"total": total, "board_list": board_list_serializable})
+
+    # Serialize and store the board list in Redis
+    redis_conn.set(cache_board_list_key, timedelta(hours=2), cache_data )
+
+    return {"total": total, "board_list": board_list_serializable}
+
+

@@ -33,12 +33,12 @@ async def board_create(_board_create: board_schema.BoardCreate, db: AsyncSession
 async def board_update(_board_update: board_schema.BoardUpdate, db: AsyncSession  = Depends(get_async_db), current_user: User = Depends(get_current_user)):
 
     db_board = await board_crud.get_board_id(db, board_id = _board_update.board_id)
-    if not db_board:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="게시판을 찾을수 없습니다.")
     
-    if current_user.id != db_board.user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="수정 권한이 없습니다.")
+    if not db_board:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을 수 없습니다.")
+
+    if db_board.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="수정 권한이 없습니다.")
 
     await board_crud.update_board(db=db, db_board = db_board, board_update = _board_update)
 
@@ -49,14 +49,16 @@ async def board_update(_board_update: board_schema.BoardUpdate, db: AsyncSession
 async def board_delete(_board_delete: board_schema.BoardDelete, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user)):
 
     db_board = await board_crud.get_board_id(db, board_id = _board_delete.board_id)
-    if not db_board:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="게시판을 찾을수 없습니다.")
     
-    if current_user.id != db_board.user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="삭제 권한이 없습니다.")
+    if not db_board:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을수 없습니다.")
+        
+    
+    if db_board.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="수정 권한이 없습니다.")
+        
 
-    await board_crud.delete_board(db=db, db_board = db_board)
+    await board_crud.delete_board(db=db, db_board=db_board)
 
     return {"message": "삭제가 완료되었습니다"}
 
@@ -70,14 +72,13 @@ async def board_get(board_id: int, db: AsyncSession = Depends(get_async_db), cur
     cached_board = await redis_conn.get(cache_board_key)
 
     if cached_board:
-        print("cache hit")
-        return json.loads(cached_board.decode('utf-8'))
+        return json.loads(cached_board)
 
     db_board = await board_crud.get_board_id(db, board_id=board_id)
     if not db_board:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을 수 없습니다.")
 
-    if not db_board.public and db_board.user_id != current_user.id:
+    if db_board.user_id != current_user.id and not db_board.public:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
 
     await redis_conn.setex(cache_board_key, timedelta(hours=2), json.dumps({'board_id': db_board.id,'board_name': db_board.name}))
@@ -93,15 +94,14 @@ async def board_get_list(db: AsyncSession = Depends(get_async_db),current_user: 
 
     cached_board_list = await redis_conn.get(cache_board_list_key)
     if cached_board_list:
-        return json.loads(cached_board_list.decode('utf-8'))
+        return json.loads(cached_board_list)
 
     total, _board_list = await board_crud.get_board_list(db, current_user, skip=page * size, limit=size)
 
     board_list_serializable = [{'id': board.id,'name': board.name, 'num_post': board.num_post} for board in _board_list]
     cache_data = json.dumps({"total": total, "board_list": board_list_serializable})
 
-    
-    await redis_conn.setex(cache_board_list_key, cache_data, timedelta(hours=2))
+    await redis_conn.setex(cache_board_list_key, timedelta(hours=2), cache_data)
 
     return {"total": total, "board_list": board_list_serializable}
 

@@ -32,7 +32,6 @@ async def delete_board(db: AsyncSession, db_board: BoardDelete):
     await db.delete(db_board)
     await db.commit()
 
-#게시판에 있는 게시물 순서대로 정렬 해야함
 async def get_board_list(db: AsyncSession, current_user: User, skip: int = 0, limit: int = 10):
     
     query = (
@@ -46,7 +45,6 @@ async def get_board_list(db: AsyncSession, current_user: User, skip: int = 0, li
     result = await db.execute(query.offset(skip).limit(limit))
     board_list = result.all()
 
-    # Calculate total count in a separate query
     total_count_query = (
         select(func.count(Board.id))
         .filter((Board.user_id == current_user.id) | (Board.public == True))

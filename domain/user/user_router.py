@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 from fastapi import APIRouter, HTTPException, Response, Request
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jose import jwt
+from jose import jwt, JWTError
 from starlette import status
 from domain.user.user_crud import pwd_context
 
@@ -15,15 +15,12 @@ import aioredis
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
-
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 SECRET_KEY = "12063be504231ea7b8538a49adc46582ac8c99e40becf99f968647de4943ae35"
 ALGORITHM = "HS256"
 
-#아이디 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/login")
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/login")
 
 router = APIRouter(
     prefix="/api/user",
@@ -42,7 +39,6 @@ async def user_create(_user_create: user_schema.UserCreate, db: AsyncSession = D
 @router.post("/login", response_model=user_schema.Token)
 async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_async_db)):
 
-    # check user and password
     user = await user_crud.get_user(db, form_data.username)
     if not user:
         raise HTTPException(
@@ -84,7 +80,6 @@ async def logout(response: Response, request: Request, redis_conn: redis.StrictR
         token_id = payload.get("jti")
 
         if token_id:
-            # Blacklist the token by storing it in Redis asynchronously
             await redis_conn.setex(token_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), 'blacklisted')
         else:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰입니다.")
@@ -110,7 +105,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     except JWTError:
         raise credentials_exception
     else:
-        #사용자명이 없거나 해당 사용자명으로 사용자 데이터 조회 실패시
         email = await user_crud.get_user(db, email)
         if email is None:
             raise credentials_exception

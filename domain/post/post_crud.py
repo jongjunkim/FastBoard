@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, selectinload
 from domain.post.post_schema import PostCreate, PostUpdate, PostDelete
 from models import User, Board, Post
 from sqlalchemy.future import select
-
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -31,14 +31,12 @@ async def delete_post(db: AsyncSession, db_post: PostDelete):
 
 
 async def get_post_list(db: AsyncSession, board_id: int, current_user: User, skip: int = 0, limit: int = 10):
-    # Constructing the query
+   
     query = select(Post).filter(Post.board_id == board_id)
 
-    # Executing the query to get total count
     total_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = total_result.scalar_one()
 
-    # Executing the query to get the list of posts
     post_list_result = await db.execute(query.offset(skip).limit(limit))
     post_list = post_list_result.scalars().all()
 

@@ -16,7 +16,6 @@ redis_port = 25100
 redis_db = 0
 
 def get_redis_connection():
-    # Creating a Redis connection
     redis_conn = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db)
     return redis_conn
 

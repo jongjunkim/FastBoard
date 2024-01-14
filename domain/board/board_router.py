@@ -73,16 +73,13 @@ def board_get(board_id: int, db: Session = Depends(get_db), current_user: User =
         print("cache hit")
         return json.loads(cached_board.decode('utf-8'))
 
-    # If not found in Redis, fetch from the database
     db_board = board_crud.get_board_id(db, board_id=board_id)
     if not db_board:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을 수 없습니다.")
 
-    # Check permissions
     if not db_board.public and db_board.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
 
-    # Store board information in Redis for future use with expiration
     redis_conn.setex(cache_board_key, timedelta(hours=2), json.dumps({'board_id': db_board.id,'board_name': db_board.name}))
 
     return {'board_id': db_board.id,'board_name': db_board.name}
@@ -101,12 +98,10 @@ def board_get_list(db: Session = Depends(get_db),current_user: User = Depends(ge
 
     total, _board_list = board_crud.get_board_list(db, current_user, skip=page * size, limit=size)
 
-    # Convert the _board_list to a format that is JSON serializable
     board_list_serializable = [{'id': board.id,'name': board.name, 'num_post': board.num_post} for board in _board_list]
     cache_data = json.dumps({"total": total, "board_list": board_list_serializable})
 
-    # Serialize and store the board list in Redis
-    redis_conn.set(cache_board_list_key, timedelta(hours=2), cache_data )
+    redis_conn.setex(cache_board_list_key, timedelta(hours=2), cache_data)
 
     return {"total": total, "board_list": board_list_serializable}
 

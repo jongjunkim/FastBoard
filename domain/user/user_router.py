@@ -19,7 +19,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 SECRET_KEY = "12063be504231ea7b8538a49adc46582ac8c99e40becf99f968647de4943ae35"
 ALGORITHM = "HS256"
 
-#아이디 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/login")
 
 
@@ -40,7 +39,6 @@ def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_
 @router.post("/login", response_model=user_schema.Token)
 def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
 
-    # check user and password
     user = user_crud.get_user(db, form_data.username)
     if not user:
         raise HTTPException(

@@ -26,7 +26,6 @@ class UserCreate(BaseModel):
             raise HTTPException(status_code = 442, detail = "비밀번호가 일치하지 않습니다")
         return v
 
-
 class Token(BaseModel):
     access_token: str
     token_type : str

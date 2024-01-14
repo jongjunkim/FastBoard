@@ -30,7 +30,6 @@ def delete_board(db: Session, db_board: BoardDelete):
     db.delete(db_board)
     db.commit()
 
-#게시판에 있는 게시물 순서대로 정렬 해야함
 def get_board_list(db: Session, current_user: User, skip: int = 0, limit: int = 10):
     
     query = (

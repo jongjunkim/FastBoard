@@ -96,7 +96,6 @@ def post_get_list(board_id: int, db:Session = Depends(get_db), current_user: Use
 
     cached_posts = redis_conn.get(cache_post_list_key)
     if cached_posts:
-        # If found in cache, return the cached data
         return json.loads(cached_posts.decode('utf-8'))
 
 
@@ -105,7 +104,6 @@ def post_get_list(board_id: int, db:Session = Depends(get_db), current_user: Use
     if not db_board:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을 수 없습니다.")
 
-    # Check if the user has permission to access the board
     if not db_board.public and db_board.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
 
@@ -120,8 +118,6 @@ def post_get_list(board_id: int, db:Session = Depends(get_db), current_user: Use
 
 
 def is_board_public(db: Session, board_id: int) -> bool:
-    # Retrieve the board by board_id
     db_board = board_crud.get_board_id(db, board_id=board_id)
 
-    # Check if the board is public
     return db_board.public if db_board else False

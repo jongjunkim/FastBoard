@@ -3,43 +3,43 @@ from datetime import timedelta, datetime
 from fastapi import APIRouter, HTTPException, Response, Request
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jose import jwt
-from sqlalchemy.orm import Session
+from jose import jwt, JWTError
 from starlette import status
 from domain.user.user_crud import pwd_context
 
-from database import get_db, get_redis_connection
+from database import get_async_db, get_redis_connection
 from domain.user import user_crud, user_schema
 import redis
 import uuid
+import aioredis
 
-
+from sqlalchemy.ext.asyncio import AsyncSession
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 SECRET_KEY = "12063be504231ea7b8538a49adc46582ac8c99e40becf99f968647de4943ae35"
 ALGORITHM = "HS256"
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/login")
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/login")
 
 router = APIRouter(
     prefix="/api/user",
 )
 
 @router.post("/signup", status_code=status.HTTP_204_NO_CONTENT)
-def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_db)):
+async def user_create(_user_create: user_schema.UserCreate, db: AsyncSession = Depends(get_async_db)):
     
-    user = user_crud.get_user(db, _user_create.email)
+    user = await user_crud.get_user(db, _user_create.email)
     if user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 사용자입니다.")
     
-    user_crud.sign_up(db=db, new_user=_user_create)
+    await user_crud.sign_up(db=db, new_user=_user_create)
 
 
 @router.post("/login", response_model=user_schema.Token)
-def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_async_db)):
 
-    user = user_crud.get_user(db, form_data.username)
+    user = await user_crud.get_user(db, form_data.username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,20 +72,25 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
     }
 
 @router.get("/logout", status_code=status.HTTP_200_OK)
-def logout(response: Response, request: Request, redis_conn: redis.StrictRedis = Depends(get_redis_connection)):
+async def logout(response: Response, request: Request, redis_conn: redis.StrictRedis = Depends(get_redis_connection)):
     access_token = request.cookies.get("access_token")
     
-    payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-    token_id = payload.get("jti")
+    try:
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_id = payload.get("jti")
 
-    # Blacklist the token by storing it in Redis
-    redis_conn.setex(token_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), 'blacklisted')
-
+        if token_id:
+            await redis_conn.setex(token_id, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), 'blacklisted')
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰입니다.")
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰 디코딩 실패")
+    
     response.delete_cookie(key="access_token")
     return {"message": "Logout successful"}
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_async_db)):
     
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -100,8 +105,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
     else:
-        #사용자명이 없거나 해당 사용자명으로 사용자 데이터 조회 실패시
-        email = user_crud.get_user(db, email)
+        email = await user_crud.get_user(db, email)
         if email is None:
             raise credentials_exception
         return email

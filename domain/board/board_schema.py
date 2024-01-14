@@ -16,15 +16,12 @@ class BoardCreate(BaseModel):
             raise ValueError('빈 값은 허용되지 않습니다.')
         return v
 
-
 #BoardCreate 상속
 class BoardUpdate(BoardCreate):
     board_id : int
   
-
 class BoardDelete(BaseModel):
     board_id : int
-
 
 class BoardList(BaseModel):
     total : int = 0

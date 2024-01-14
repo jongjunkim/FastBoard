@@ -1,37 +1,43 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from domain.post.post_schema import PostCreate, PostUpdate, PostDelete
 from models import User, Board, Post
+from sqlalchemy.future import select
+from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
-def create_post(db:Session, board: Board, user: User, post_create: PostCreate):
+
+async def create_post(db:AsyncSession, board: Board, user: User, post_create: PostCreate):
     db_post = Post(title = post_create.title,
                    content = post_create.content,
                    board = board,
                    user = user)
     db.add(db_post)
-    db.commit()
+    await db.commit()
 
-def get_post_id(db:Session, post_id: int):
-    return db.query(Post).get(post_id)
+async def get_post_id(db: AsyncSession, post_id: int):
+    result = await db.execute(select(Post).filter(Post.id == post_id))
+    return result.scalars().first()
 
-def update_post(db: Session, db_post: Post, post_update: PostUpdate):
+async def update_post(db: AsyncSession, db_post: Post, post_update: PostUpdate):
     db_post.title = post_update.title
     db_post.content = post_update.content
     db.add(db_post)
-    db.commit()
+    await db.commit()
 
-def delete_post(db: Session, db_post: PostDelete):
-    db.delete(db_post)
-    db.commit()
+async def delete_post(db: AsyncSession, db_post: PostDelete):
+    await db.delete(db_post)
+    await db.commit()
 
 
-def get_post_list(db: Session, board_id: int, current_user:User, skip: int = 0, limit: int = 10):
+async def get_post_list(db: AsyncSession, board_id: int, current_user: User, skip: int = 0, limit: int = 10):
+   
+    query = select(Post).filter(Post.board_id == board_id)
 
-    query = db.query(Post)
+    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = total_result.scalar_one()
 
-    query = query.filter((Post.board_id == board_id))
-
-    total = query.count()
-    post_list = query.offset(skip).limit(limit).all()
+    post_list_result = await db.execute(query.offset(skip).limit(limit))
+    post_list = post_list_result.scalars().all()
 
     return total, post_list

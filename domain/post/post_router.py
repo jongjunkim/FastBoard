@@ -67,12 +67,12 @@ async def post_delete(_post_delete: post_schema.PostDelete, db: AsyncSession = D
 async def post_get(post_id: int, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user),
             redis_conn: redis.StrictRedis = Depends(get_redis_connection)):
     
-    cache_post_key = f"post_user_{current_user.id}_{post_id}"
+    # cache_post_key = f"post_user_{current_user.id}_{post_id}"
 
-    cached_post = await redis_conn.get(cache_post_key)
+    # cached_post = await redis_conn.get(cache_post_key)
 
-    if cached_post:
-        return json.loads(cached_post.decode('utf-8'))
+    # if cached_post:
+    #     return json.loads(cached_post.decode('utf-8'))
 
     db_post = await post_crud.get_post_id(db, post_id=post_id)
     
@@ -80,10 +80,10 @@ async def post_get(post_id: int, db: AsyncSession = Depends(get_async_db), curre
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시글을 찾을 수 없습니다.")
 
     # 본인이 생성한 게시글이거나 전체 공개된 게시판의 게시글인 경우 조회 가능
-    if db_post.user_id != current_user.id and not is_board_public(db, db_post.board_id):
+    if db_post.user_id != current_user.id and is_board_public(db, db_post.board_id) == False:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
 
-    await redis_conn.setex(cache_post_key, timedelta(hours=2), json.dumps({"post_id": db_post.id, "title": db_post.title, "content": db_post.content}))
+    # await redis_conn.setex(cache_post_key, timedelta(hours=2), json.dumps({"post_id": db_post.id, "title": db_post.title, "content": db_post.content}))
 
     return {"post_id": db_post.id, "title": db_post.title, "content": db_post.content}
 
@@ -125,6 +125,5 @@ async def post_get_list(board_id: int, db: AsyncSession = Depends(get_async_db),
 async def is_board_public(db: AsyncSession, board_id: int) -> bool:
     # Retrieve the board by board_id
     db_board = await board_crud.get_board_id(db, board_id=board_id)
-
-    # Check if the board is public
-    return db_board.public if db_board else False
+   
+    return db_board.public

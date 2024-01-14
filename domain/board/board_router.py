@@ -101,7 +101,7 @@ async def board_get_list(db: AsyncSession = Depends(get_async_db),current_user: 
     cache_data = json.dumps({"total": total, "board_list": board_list_serializable})
 
     
-    await redis_conn.set(cache_board_list_key, timedelta(hours=2), cache_data )
+    await redis_conn.setex(cache_board_list_key, cache_data, timedelta(hours=2))
 
     return {"total": total, "board_list": board_list_serializable}
 

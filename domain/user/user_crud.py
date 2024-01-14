@@ -16,5 +16,5 @@ async def sign_up(db: AsyncSession, new_user: UserCreate):
     await db.commit()
     
 async def get_user(db: AsyncSession, email: str):
-    result = await db.execute(select(User).where(User.email == email))
-    return result.scalar_one()
+    result = await db.execute(select(User).filter(User.email == email))
+    return result.scalar_one_or_none()

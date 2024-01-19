@@ -1,7 +1,18 @@
+# 프로젝트 소개
+게시판을 만들어보면서 FastAPI를 배우기 위해 시작하게되었습니다.
+독학으로 책과 블로그들을 보면서 제작한 프로젝트입니다.
+
 # 기술스택
-FastAPI, Python, Redis, Docker, PostgreSQL
+FastAPI, Python, Redis(세션 저장용), Docker, PostgreSQL
 
+# 프로젝트 기능
+* 유저 - 유저 로그인시 Access Token을 반환 및 Redis를 이용한 Access Token Blacklist 관리 (탈취 위험 방지)
+* 게시판 - CRUD 기능(권한 관리 및 접근제어), 페이징
+* 게시글 - CRUD 기능(권한 관리 및 접근제어), 페이징
+* 댓글 - CRUD 기능(권한 관리 및 접근제어), 페이징
 
+# API 설계
+* To be done
 
 # 실행방법
 

@@ -7,9 +7,9 @@ FastAPI, Python, Redis(세션 저장용), Docker, PostgreSQL
 
 # 프로젝트 기능
 * 유저 - 유저 로그인시 Access Token을 반환 및 Redis를 이용한 Access Token Blacklist 관리 (탈취 위험 방지)
-* 게시판 - CRUD 기능(권한 관리 및 접근제어), 페이징
-* 게시글 - CRUD 기능(권한 관리 및 접근제어), 페이징
-* 댓글 - CRUD 기능(권한 관리 및 접근제어), 페이징
+* 게시판 - CRUD 기능(권한 관리 및 접근제어), 페이징, 
+* 게시글 - CRUD 기능(접근제어), 페이징
+* 댓글 - CRUD (접근제어)
 
 # API 설계
 * To be done

@@ -1,3 +1,8 @@
+# 기술스택
+FastAPI, Python, Redis, Docker, PostgreSQL
+
+
+
 # 실행방법
 
 1. Local 환경에있는 도커를 실행후 docker-compose up -d 실행합니다. 

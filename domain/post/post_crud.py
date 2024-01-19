@@ -4,6 +4,7 @@ from models import User, Board, Post
 from sqlalchemy.future import select
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 
 
 
@@ -11,7 +12,9 @@ async def create_post(db:AsyncSession, board: Board, user: User, post_create: Po
     db_post = Post(title = post_create.title,
                    content = post_create.content,
                    board = board,
-                   user = user)
+                   user = user,
+                   create_date=datetime.now(),
+                   modified_date=datetime.now())
     db.add(db_post)
     await db.commit()
 
@@ -22,6 +25,7 @@ async def get_post_id(db: AsyncSession, post_id: int):
 async def update_post(db: AsyncSession, db_post: Post, post_update: PostUpdate):
     db_post.title = post_update.title
     db_post.content = post_update.content
+    db_postmodified_date = datetime.now()
     db.add(db_post)
     await db.commit()
 

@@ -20,7 +20,11 @@ router = APIRouter(
 async def post_create(board_id: int, _post_create: post_schema.PostCreate, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user)):
 
     board = await board_crud.get_board_id(db, board_id=board_id)
-    if not board or (board.user_id != current_user.id and not board.public):
+
+    if not board:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을 수 없습니다.")
+
+    if board.user_id != current_user.id and not board.public:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="게시판 접근 권한이 없습니다.")
 
     await post_crud.create_post(db=db, board=board, user=current_user, post_create=_post_create)
@@ -32,7 +36,7 @@ async def post_update(_post_update: post_schema.PostUpdate, db: AsyncSession = D
 
     db_post = await post_crud.get_post_id(db, post_id = _post_update.post_id)
     if not db_post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시글을 찾을수 없습니다.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시글을 찾을 수 없습니다.")
 
     if db_post.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="수정 권한이 없습니다.")

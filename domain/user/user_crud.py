@@ -1,3 +1,4 @@
+from datetime import datetime
 from passlib.context import CryptContext
 from domain.user.user_schema import UserCreate
 from models import User
@@ -11,7 +12,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 async def sign_up(db: AsyncSession, new_user: UserCreate):
     db_user = User(fullname=new_user.fullname,
                    password=pwd_context.hash(new_user.password1),
-                   email=new_user.email)
+                   email=new_user.email,
+                   create_date=datetime.now())
     db.add(db_user)
     await db.commit()
     

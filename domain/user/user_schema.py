@@ -1,11 +1,12 @@
 from pydantic import BaseModel, EmailStr, validator
-
+import datetime
 from fastapi import HTTPException
 
 class User(BaseModel):
     id : int
     fullname : str
     email : str
+    create_date: datetime.datetime
 
 class UserCreate(BaseModel):
     fullname: str

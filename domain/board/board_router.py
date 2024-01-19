@@ -51,7 +51,7 @@ async def board_delete(_board_delete: board_schema.BoardDelete, db: AsyncSession
     db_board = await board_crud.get_board_id(db, board_id = _board_delete.board_id)
     
     if not db_board:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을수 없습니다.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="게시판을 찾을 수 없습니다.")
         
     
     if db_board.user_id != current_user.id:

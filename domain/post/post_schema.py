@@ -1,11 +1,19 @@
+import datetime
 from pydantic import BaseModel, validator
-from domain.board.board_schema import Board 
+from domain.answer.answer_schema import Answer
+from domain.user.user_schema import User
 
 
 class Post(BaseModel):
     id: int
     title: str
     content: str
+    create_date: datetime.datetime
+    modified_date: datetime.datetime | None = None
+    post_answer: list[Answer] = []
+
+    class Config:
+        from_attributes = True
 
 class PostCreate(BaseModel):
     title : str

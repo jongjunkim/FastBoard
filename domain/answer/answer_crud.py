@@ -34,4 +34,9 @@ async def get_answer_id(db: AsyncSession, answer_id: int):
 
 async def delete_answer(db: AsyncSession, db_answer: AnswerDelete):
     await db.delete(db_answer)
+<<<<<<< HEAD
     await db.commit()
+=======
+    await db.commit()
+
+>>>>>>> answer

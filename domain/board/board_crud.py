@@ -21,9 +21,14 @@ async def exisiting_board(db:AsyncSession, _board: BoardCreate):
     return existing.scalars().first()
 
 async def get_board_id(db: AsyncSession, board_id: int):
-    result = await db.execute(select(Board).filter(Board.id == board_id))
+    result = await db.execute(
+        select(Board)
+        .options(selectinload(Board.board_posts).selectinload(Post.post_answer))
+        .filter(Board.id == board_id)
+    )
     return result.scalars().first()
-    
+
+
 async def update_board(db: AsyncSession, db_board: Board, board_update: BoardUpdate):
     db_board.name = board_update.name
     db_board.public = board_update.public

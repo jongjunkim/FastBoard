@@ -3,7 +3,7 @@
 독학으로 책과 블로그들을 보면서 제작한 프로젝트입니다.
 
 # 기술스택
-FastAPI, Python, Redis(세션 저장용), Docker, PostgreSQL
+FastAPI, Python, Redis(Access Token 저장용), Docker, PostgreSQL
 
 # 프로젝트 기능
 * 유저 - 유저 로그인시 Access Token을 반환 및 Redis를 이용한 Access Token Blacklist 관리 (탈취 위험 방지)
@@ -60,3 +60,12 @@ FastAPI, Python, Redis(세션 저장용), Docker, PostgreSQL
 2. source venv/bin/activate
 3. uvicorn main:app --reload
 4. http://127.0.0.1:8000/docs 에서 기능 확인가능합니다.
+
+# 프로젝트를 마치며
+
+## 후기
+FastAPI를 공부하면서 혼자 계획해서 만든 프로젝트이기 때문에, 혼자 힘으로 RestAPI를 구현했다는 뿌듯함과 더불어 아쉬움이 많이 남습니다.
+
+맨처음 동기 구현을 하고 나서 비동기 구현으로 바꾸면서 def->에서 async로만 바꾸고 모든 함수앞에 await을 붙이면 작동될줄 알았지만 그거 외에도 수정해야할 부분이 많아 시행착오를 많이 겪었습니다
+
+덕분에 디버깅을 하고 수정하면서 많이 배우게 됬습니다. 앞으로 제가 무엇을 더 공부해야할지 스스로 인지 하게 되었고, 벡엔드 지식에 대해 흥미를 많이 가지게 될 수 있었습니다. 

@@ -3,7 +3,7 @@
 독학으로 책과 블로그들을 보면서 제작한 프로젝트입니다.
 
 # 기술스택
-FastAPI, Python, Redis(Access Token 저장용), Docker, PostgreSQL
+FastAPI, Python, Redis(Access Token 저장용), Docker(PostreSQL Redis 관리), PostgreSQL
 
 # 프로젝트 기능
 * 유저 - 유저 로그인시 Access Token을 반환 및 Redis를 이용한 Access Token Blacklist 관리 (탈취 위험 방지)

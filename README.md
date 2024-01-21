@@ -14,7 +14,19 @@ FastAPI, Python, Redis(세션 저장용), Docker, PostgreSQL
 # DB 설계
 ![image](https://github.com/jongjunkim/FastBoard/blob/master/image/ER%20diagram.PNG)
 # API 설계
-* To be done
+## 게시판
+![image](https://github.com/jongjunkim/FastBoard/blob/master/image/%EA%B2%8C%EC%8B%9C%ED%8C%90.PNG)
+
+## 게시물
+![image](https://github.com/jongjunkim/FastBoard/blob/master/image/%EA%B2%8C%EC%8B%9C%EB%AC%BC.PNG)
+
+## 댓글
+![image](https://github.com/jongjunkim/FastBoard/blob/master/image/%EB%8C%93%EA%B8%80.PNG)
+
+## 유저
+![image](https://github.com/jongjunkim/FastBoard/blob/master/image/%EC%9C%A0%EC%A0%80.PNG )
+
+
 
 # 실행방법
 

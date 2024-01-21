@@ -11,6 +11,8 @@ FastAPI, Python, Redis(세션 저장용), Docker, PostgreSQL
 * 게시글 - CRUD 기능(접근제어), 페이징
 * 댓글 - CRUD (접근제어)
 
+# DB 설계
+
 # API 설계
 * To be done
 
